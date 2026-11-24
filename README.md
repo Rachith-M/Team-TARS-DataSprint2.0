@@ -1,74 +1,83 @@
-# Team TARS · Anveshan Data Sprint 2.0 (NLP track)
+# Team TARS - Data Sprint 2.0, NLP track
 
-Hindi / Hinglish intent classification into 55 assistant intents plus a **Class 55** out-of-scope fallback,
-scored by unweighted Macro-F1 over 56 classes.
+Our solution for the Hindi/Hinglish intent classification task: 55 intents plus class 55 for
+out-of-scope requests, scored on macro F1 over all 56 classes.
 
-| | |
-|---|---|
-| Kaggle team name | `rachith_33` |
-| Final submission | [`submission.csv`](submission.csv) (4,912 rows, SHA-256 `92fc3b6f737e462b5aee3bbe55e42f81e2ec3c8161e2025ee2100059cd46d85b`) |
-| Leaderboard Macro-F1 | public **0.83344** · private **0.84934** |
-| Base model | [`AkshitaS/bhasha-embed-v0`](https://huggingface.co/AkshitaS/bhasha-embed-v0) @ `64b330ff`, a MuRIL-based 12-layer BERT, **fully fine-tuned** |
-| Inference parameters | **256,571,244** (≤ 300,000,000), see [Parameter count](#3-parameter-count-proof--300m) |
+Kaggle team name: `rachith_33`
 
----
+Final submission is `submission.csv` in this repo (public 0.83344, private 0.84934).
+SHA-256 of the file: `92fc3b6f737e462b5aee3bbe55e42f81e2ec3c8161e2025ee2100059cd46d85b`
 
-## 1. Pipeline overview & architecture
+Model: `AkshitaS/bhasha-embed-v0` (revision `64b330ff`), which is a 12-layer BERT built on the MuRIL
+vocabulary. We fine-tuned the whole encoder and added a TF-IDF based lexical head on top.
+Total parameter count at inference is 256,571,244.
 
-```
-query ─┬─ view 1: original text ──────────────────────┐
-       └─ view 2: normalized / cross-script dictionary ┤
-                                                       ▼
-          Bhasha encoder (12 layers, 768-d, fine-tuned) ── semantic head (768 → 56)
-          TF-IDF on raw + romanized + phonetic text ───── lexical head (343,162 → 56)
-                                                       ▼
-                         56 logits (views averaged) → argmax → intent 0–55
-```
 
-* **Encoder.** `bhasha-embed-v0` (MuRIL vocabulary of 197,285 tokens), all 12 layers trained.
-* **Lexical head.** A linear layer over 343,162 sparse TF-IDF features: character 2–5-grams and word 1–2-grams
-  on three views of the text (raw, romanized, phonetic). It gives exact-spelling evidence the encoder can miss.
-* **Training** (`code/sprint/a2_recipe.py`, trainer `code/sprint/depth_ladder.py`): AdamW, encoder LR 2e-5 with
-  layer-wise decay 0.9, head LR 1e-3, 10% warmup, label smoothing 0.1, batch 32, max 64 tokens, fp16 AMP,
-  8 epochs on all organizer rows plus train-only augmented rows. Trained on an AMD RX 9060 XT (ROCm).
-* **Train-only augmentation** (never used for evaluation, blocked from matching any validation text):
-  augmented copies of 65% of rows at weight 0.7 (romanized, natural Hinglish with English swaps and fillers,
-  ASR-style deletions), plus phrase views and counterfactual contrast pairs (for example lights on ↔ off) at
-  weight 0.55.
+## Pipeline
 
-| File | Role |
-|---|---|
-| `code/intent_model.py` | Text cleaning, Devanagari → Roman transliteration, phonetic folding, TF-IDF features |
-| `code/sprint/augment.py` | Normalization (numbers, fillers) and augmentation |
-| `code/sprint/bhasha_audit.py`, `score_native.py` | Cross-script dictionary view |
-| `code/sprint/depth_ladder.py` | Model (encoder + heads), trainer, weight export |
-| `code/sprint/a2_recipe.py` | Final recipe: fold validation and final training → `submission.csv` |
-| `code/sprint/defense.py`, `defense_web/` | Stage 2 CPU demo server and web UI |
-| `code/param_count.py` | Parameter-count proof for a trained checkpoint |
+Every query is scored twice and the two sets of logits are averaged:
 
-## 2. Cross-script (Hindi ↔ Hinglish) & Class 55 handling
+1. the text as typed
+2. a normalized copy. For romanized or mixed queries we also swap romanized words back to Devanagari
+   using a small dictionary built from the training data
 
-**Cross-script.** The test set is 64% romanized against 33% in training, so the pipeline makes every script
-look alike:
+Each pass goes through the encoder and a semantic head (768 -> 56), plus a lexical head that sits on
+343,162 sparse TF-IDF features (char 2-5 grams and word 1-2 grams over the raw, romanized and phonetic
+versions of the text). The lexical head was there in our earlier frozen-encoder version too. It picks up
+exact spellings and short phrases that the encoder sometimes misses.
 
-1. Unicode NFKC, casefold, strip ZWJ/ZWNJ and punctuation (`intent_model.clean`).
-2. Devanagari → Roman transliteration with implicit-schwa removal (`intent_model.transliterate`), then phonetic
-   folding of spelling variants (aa→a, ee→i, w→v, doubled letters).
-3. Numbers and fillers unified (`10 → das`; `bhai`, `yaar`, `please` removed) for the second view.
-4. A 2,314-entry cross-script dictionary, built from training rows only, maps romanized words back to
-   Devanagari for the second encoder view. Live example:
-   `kal subah 10 baje meri meeting ki yaad dila do` → `कल सुबह दस बजे मेरी meeting ki याद दिला दो`.
-5. Romanized and code-mixed augmented copies teach the encoder that both scripts mean the same intent.
+Training settings (see `code/sprint/a2_recipe.py` and `code/sprint/depth_ladder.py`):
 
-**Class 55 (out-of-scope).** Class 55 is learned as a 56th class from its 249 organizer examples. The recipe
-never generates phrase or contrast rows from Class 55, so the fallback is not diluted by synthetic text.
-The Kaggle CSV is the plain argmax over 56 logits. For the live Stage 2 demo, a calibrated policy
-(`defense.py`, thresholds fitted on organizer-labeled out-of-fold predictions) routes confident requests,
-asks the user to rephrase uncertain ones, and declines the rest as Class 55.
+- AdamW, encoder lr 2e-5 with layer-wise decay 0.9, head lr 1e-3, 10% warmup
+- label smoothing 0.1, batch size 32, max 64 tokens, fp16
+- 8 epochs on all organizer rows plus extra augmented rows (below)
+- trained on an AMD RX 9060 XT with ROCm, roughly 30 minutes
 
-## 3. Parameter count proof (≤ 300M)
+The extra rows are only used for training: augmented copies of about 65% of the rows at weight 0.7
+(romanized versions, Hinglish with some English words and fillers swapped in, ASR-style dropped
+characters), and phrase views plus "opposite" pairs like lights on vs lights off at weight 0.55. We make
+sure none of them match any validation text, otherwise the CV numbers would be inflated.
 
-`python code/param_count.py runs/final/final/checkpoint` on the checkpoint behind `submission.csv`:
+Where things live:
+
+- `code/intent_model.py` - cleaning, Devanagari to Roman transliteration, phonetic folding, TF-IDF features
+- `code/sprint/augment.py` - number/filler normalization and the augmentation
+- `code/sprint/bhasha_audit.py`, `code/sprint/score_native.py` - the cross-script dictionary view
+- `code/sprint/depth_ladder.py` - model, training loop, weight export
+- `code/sprint/a2_recipe.py` - validation runs and the final training run that writes the CSV
+- `code/sprint/defense.py` and `code/sprint/defense_web/` - CPU demo server and web UI for stage 2
+- `code/param_count.py` - parameter count for a trained checkpoint
+
+There is a lot of other code in `code/sprint/` from experiments that didn't make it into the final
+model (class 55 gating, retrieval, other encoders, distillation probes). We left it in so the history is
+visible, but none of it is needed to reproduce the CSV.
+
+
+## Handling Hindi vs Hinglish, and class 55
+
+The biggest thing we noticed in the data is that the test set is about 64% romanized while training is
+only 33%. So most of the work went into making the different scripts look the same to the model:
+
+- unicode NFKC, lowercase, remove zero-width joiners and punctuation
+- transliterate Devanagari to Roman and drop the implicit "a" sounds, then fold common spelling
+  variations (aa/a, ee/i, w/v, doubled letters)
+- convert numbers and drop fillers (bhai, yaar, please, na) for the second view, e.g. "10 baje" becomes
+  "das baje"
+- the dictionary view mentioned above, e.g.
+  `kal subah 10 baje meri meeting ki yaad dila do` -> `कल सुबह दस बजे मेरी meeting ki याद दिला दो`
+- romanized and code-mixed training copies so the model sees both forms of the same request
+
+Class 55 is just treated as the 56th class, trained on its 249 examples. We don't generate phrase or
+opposite-pair rows from class 55 because those tended to blur the boundary. The Kaggle CSV is a plain
+argmax over the 56 outputs. In the live demo we add a confidence policy on top: confident requests get
+routed, borderline ones get a "please rephrase", and low-confidence ones are declined as class 55. The
+thresholds were fitted on out-of-fold predictions on organizer data.
+
+
+## Parameter count
+
+Output of `python code/param_count.py runs/final/final/checkpoint` on the checkpoint that produced
+`submission.csv`:
 
 ```
 Encoder weights              236,965,632
@@ -79,70 +88,92 @@ Dictionary entries                 2,314
 Conservative total           256,571,244   cap 300,000,000  ->  OK
 ```
 
-The trainer also refuses to build a model above the cap (`depth_ladder.model_for`). Single model, no ensemble.
+The `sum(p.numel())` number on its own is 256,225,768. We also added the TF-IDF vocabulary and the
+dictionary to be safe, since both get loaded at inference. It's a single model, not an ensemble. The
+trainer also throws an error if a model would go over 300M (`model_for` in `depth_ladder.py`).
 
-## 4. Local CV score & validation summary
 
-Validation uses a frozen 5-fold `StratifiedGroupKFold` plan (`code/sprint_results/depth_ladder/plan.npz`),
-grouped by each query's phonetic form and stratified by label × script. Spelling variants of the same query
-never straddle train and validation; the loader rejects any plan where they would. Each
-pilot fold uses an inner early-stopping split to choose the epoch count, then a refit on the outer
-training split. Evaluation views: the organizer text (clean), a noisy Hinglish rewrite and ASR-style noise.
+## Validation
 
-| Held-out pilot fold 2 (3,387 organizer rows) | Macro-F1 | Accuracy |
+We used a fixed 5-fold StratifiedGroupKFold split saved in `code/sprint_results/depth_ladder/plan.npz`.
+It's grouped on the phonetic form of each query, so different spellings of the same sentence can't end up
+on both sides. Inside each fold there is a smaller early-stopping split to pick the number of epochs,
+then we retrain on the full training part of the fold and score the held-out part.
+
+Since the test data is noisier than train, we score three versions of the held-out rows: the original
+text, a noisy Hinglish rewrite, and an ASR-style version with dropped characters.
+
+Fold 2 (3,387 held-out organizer rows):
+
+| | macro F1 | accuracy |
 |---|---|---|
-| Clean text | 0.8680 | 0.8710 |
-| Noisy Hinglish | 0.8562 | 0.8606 |
+| original text | 0.8680 | 0.8710 |
+| noisy Hinglish | 0.8562 | 0.8606 |
 | ASR-style noise | 0.8342 | 0.8379 |
-| Romanized rows only (clean) | 0.8726 | |
-| Class 55 F1 (clean) | 0.863 | |
 
-| Evidence | Result |
-|---|---|
-| Full fine-tuning vs frozen encoder, pilot folds 1 / 2 (same rows) | +0.029 / +0.036 clean, +0.021 / +0.041 noisy Macro-F1 |
-| Frozen-encoder model, clean OOF on folds 1 / 2 | 0.8678 / 0.8670 (public LB 0.83431) |
-| Final fine-tuned model, Kaggle | public 0.83344, private 0.84934 |
+On the same fold, romanized rows alone get 0.8726 and class 55 F1 is 0.863.
 
-Per-class F1 on fold 2: median 0.874, 25 of 56 classes ≥ 0.90. The weakest are Cooking technique (0.58),
-General assistant request (0.69), Raise volume (0.71) and Greeting (0.73). Most errors fall between neighbouring
-intents: create vs check calendar, look-up vs general request, cooking technique vs recipe.
+Other numbers that shaped our decisions:
 
-## 5. Reproduce the final submission CSV
+- fine-tuning the full encoder vs keeping it frozen, on folds 1 and 2: +0.029 / +0.036 on clean text and
+  +0.021 / +0.041 on noisy text
+- our earlier frozen-encoder model had OOF macro F1 of 0.8678 / 0.8670 on folds 1 and 2 and scored 0.83431
+  on the public leaderboard. The fine-tuned model scored 0.83344 public but 0.84934 private, so it held
+  up better on the unseen part of the test set
+- median per-class F1 on fold 2 is 0.874, with 25 of 56 classes at 0.90 or above. The weak ones are
+  cooking technique (0.58), general assistant request (0.69), raise volume (0.71) and greeting (0.73).
+  Most mistakes are between related intents (create vs check calendar, looking up info vs general
+  requests, cooking technique vs recipes)
 
-Requirements: Python 3.12 and a GPU with ≥ 8 GB memory (NVIDIA CUDA or AMD ROCm; both use `torch.cuda`).
-About 30 minutes of training on an RX 9060 XT.
+We only ran the full pilot on folds 1 and 2. Fold 1's final refit was cut short by the deadline, so the
+table above is fold 2.
 
-1. **Install PyTorch with GPU support**, then the rest:
-   ```bash
-   pip install torch --index-url https://download.pytorch.org/whl/cu124   # NVIDIA (pick your CUDA)
+
+## Reproducing submission.csv
+
+You need Python 3.12 and a GPU with at least 8 GB of memory. NVIDIA (CUDA) and AMD (ROCm) both work
+since the code goes through `torch.cuda`.
+
+1. Install a GPU build of PyTorch, then the rest:
+
+   ```
+   pip install torch --index-url https://download.pytorch.org/whl/cu124
    pip install -r requirements.txt
    ```
-   On Windows with an AMD GPU, `run_pc.ps1` installs the ROCm 7.2.1 PyTorch build automatically.
-2. **Add the competition data**: copy the organizers' `train.csv` and `test.csv` into `code/`. They are not
-   redistributed here. `train.csv` SHA-256: `db68ca1c1f3072353d72e7447d989b968652852dc24d428a4a91c0f0d9df324a`.
-3. **Download the pinned base model**:
-   ```bash
+
+   On Windows with an AMD card, `run_pc.ps1` sets up the ROCm PyTorch build for you.
+
+2. Put the competition `train.csv` and `test.csv` in `code/`. We haven't included them in the repo.
+   Expected SHA-256 of train.csv: `db68ca1c1f3072353d72e7447d989b968652852dc24d428a4a91c0f0d9df324a`
+
+3. Download the base model at the exact revision we used:
+
+   ```
    python -c "from huggingface_hub import snapshot_download; print(snapshot_download('AkshitaS/bhasha-embed-v0', revision='64b330ff6703ffebdfc55c412a6a8aaf1b2728c8', allow_patterns=['*.json','*.safetensors','vocab.txt']))"
    ```
-4. **Train on all rows and predict the test set** (from `code/`):
-   ```bash
-   python -X utf8 -m sprint.a2_recipe --train train.csv --checkpoint <path printed in step 3> \
-       --plan sprint_results/depth_ladder/plan.npz --output ../runs/final \
-       --final-epochs 8 --epochs 8 --lr 2e-5 --test test.csv
+
+4. From inside `code/`, train on everything and predict the test set:
+
    ```
-   Output: `runs/final/final/submission.csv`, plus the weights in `runs/final/final/checkpoint/`.
-   Windows shortcut: `powershell -ExecutionPolicy Bypass -File run_pc.ps1` runs steps 1, 3 and 4.
-5. **Check the parameter count**: `python code/param_count.py runs/final/final/checkpoint`.
-6. *(Optional)* Validate on a pilot fold first: replace `--final-epochs 8 --epochs 8 --test test.csv` with
-   `--folds 2 --epochs 12` and an output folder such as `../runs/fold2`.
+   python -X utf8 -m sprint.a2_recipe --train train.csv --checkpoint <path from step 3> --plan sprint_results/depth_ladder/plan.npz --output ../runs/final --final-epochs 8 --epochs 8 --lr 2e-5 --test test.csv
+   ```
 
-Seeds are fixed, but GPU kernels are not fully deterministic (especially on ROCm), so a rerun can differ
-from the committed `submission.csv` on a small number of rows.
+   This writes `runs/final/final/submission.csv` and saves the weights to `runs/final/final/checkpoint/`.
+   On Windows, `powershell -ExecutionPolicy Bypass -File run_pc.ps1` does steps 1, 3 and 4 in one go.
 
-## Rules compliance
+5. Check the parameter count with `python code/param_count.py runs/final/final/checkpoint`.
 
-* One model of 256.6M parameters, under the 300M cap. No ensemble.
-* No commercial LLM APIs and no external lookup of test queries; training uses organizer data only.
-* `llm_rewrite.py` and `englishize.py` are post-deadline experiments (local, open-weight, training rows only).
-  They are **not** part of the submitted pipeline and are off by default.
-* Model weights are not published; they can be rebuilt with the steps above.
+If you want to see the CV numbers first, run step 4 with `--folds 2 --epochs 12 --output ../runs/fold2`
+instead of the `--final-epochs/--epochs 8/--test` options.
+
+Note: seeds are fixed, but GPU kernels aren't fully deterministic (ROCm especially), so a rerun can
+differ from our CSV on a handful of rows.
+
+
+## Notes on the rules
+
+- single model, 256.6M parameters including the lookup tables
+- trained only on the organizer data. No paid LLM APIs and no external lookups of test queries
+- `llm_rewrite.py` and `englishize.py` are experiments we started after the deadline (a local open-weight
+  model rewriting training rows only). They're off by default and weren't used for the submission
+- we're not publishing the trained weights. Use the steps above to rebuild them
