@@ -48,9 +48,9 @@ Where things live:
 - `code/sprint/defense.py` and `code/sprint/defense_web/` - CPU demo server and web UI for stage 2
 - `code/param_count.py` - parameter count for a trained checkpoint
 
-There is a lot of other code in `code/sprint/` from experiments that didn't make it into the final
-model (class 55 gating, retrieval, other encoders, distillation probes). We left it in so the history is
-visible, but none of it is needed to reproduce the CSV.
+The rest of `code/sprint/` is support code that the files above import (feature builders, the CPU
+runtime, export helpers). We removed our dead-end experiments from this repo so only code on the path to
+the CSV and the demo is left.
 
 
 ## Handling Hindi vs Hinglish, and class 55
@@ -174,6 +174,8 @@ differ from our CSV on a handful of rows.
 
 - single model, 256.6M parameters including the lookup tables
 - trained only on the organizer data. No paid LLM APIs and no external lookups of test queries
-- `llm_rewrite.py` and `englishize.py` are experiments we started after the deadline (a local open-weight
-  model rewriting training rows only). They're off by default and weren't used for the submission
+- `englishize.py` and the `--englishize` / `--llm-rewrites` options in `a2_recipe.py` are from experiments
+  we started after the deadline. They're off by default and weren't used for the submission
+- the stage 2 demo (`defense.py`) still loads our earlier frozen-encoder model, the one behind our 0.83431
+  public score. We're moving it to the fine-tuned model for the final demo round
 - we're not publishing the trained weights. Use the steps above to rebuild them
