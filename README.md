@@ -8,14 +8,16 @@ Kaggle team name: Team TARS
 Final submission is `submission.csv` in this repo (public 0.83344, private 0.84934).
 SHA-256 of the file: `92fc3b6f737e462b5aee3bbe55e42f81e2ec3c8161e2025ee2100059cd46d85b`
 
-Model: `AkshitaS/bhasha-embed-v0` (revision `64b330ff`), which is a 12-layer BERT built on the MuRIL
-vocabulary. We fine-tuned the whole encoder and added a TF-IDF based lexical head on top.
+Model: `AkshitaS/bhasha-embed-v0` (revision `64b330ff`), a 12-layer BERT initialized from
+`google/muril-base-cased` and trained for Hindi, English and romanized Hindi. We fine-tuned the whole
+encoder and added a TF-IDF based lexical head on top.
 Total parameter count at inference is 256,571,244.
 
 
 ## Pipeline
 
-Every query is scored twice and the two sets of logits are averaged:
+Every query is scored twice and the logits are blended, 65% from the first pass and 35% from the
+second:
 
 1. the text as typed
 2. a normalized copy. For romanized or mixed queries we also swap romanized words back to Devanagari
@@ -23,8 +25,8 @@ Every query is scored twice and the two sets of logits are averaged:
 
 Each pass goes through the encoder and a semantic head (768 -> 56), plus a lexical head that sits on
 343,162 sparse TF-IDF features (char 2-5 grams and word 1-2 grams over the raw, romanized and phonetic
-versions of the text). The lexical head was there in our earlier frozen-encoder version too. It picks up
-exact spellings and short phrases that the encoder sometimes misses.
+versions of the text). The lexical head was there in our earlier frozen-encoder version too. The idea is to
+give the model direct evidence from exact spellings and short phrases.
 
 Training settings (see `code/sprint/a2_recipe.py` and `code/sprint/depth_ladder.py`):
 
@@ -61,14 +63,14 @@ only 33%. So most of the work went into making the different scripts look the sa
 - unicode NFKC, lowercase, remove zero-width joiners and punctuation
 - transliterate Devanagari to Roman and drop the implicit "a" sounds, then fold common spelling
   variations (aa/a, ee/i, w/v, doubled letters)
-- convert numbers and drop fillers (bhai, yaar, please, na) for the second view, e.g. "10 baje" becomes
-  "das baje"
+- convert numbers and drop fillers at the start or end of the query (bhai, yaar, please, na) for the
+  second view, e.g. "10 baje" becomes "das baje"
 - the dictionary view mentioned above, e.g.
   `kal subah 10 baje meri meeting ki yaad dila do` -> `कल सुबह दस बजे मेरी meeting ki याद दिला दो`
 - romanized and code-mixed training copies so the model sees both forms of the same request
 
 Class 55 is just treated as the 56th class, trained on its 249 examples. We don't generate phrase or
-opposite-pair rows from class 55 because those tended to blur the boundary. The Kaggle CSV is a plain
+opposite-pair rows from class 55, only from the supported intents. The Kaggle CSV is a plain
 argmax over the 56 outputs. In the live demo we add a confidence policy on top: confident requests get
 routed, borderline ones get a "please rephrase", and low-confidence ones are declined as class 55. The
 thresholds were fitted on out-of-fold predictions on organizer data.
@@ -115,8 +117,8 @@ On the same fold, romanized rows alone get 0.8726 and class 55 F1 is 0.863.
 
 Other numbers that shaped our decisions:
 
-- fine-tuning the full encoder vs keeping it frozen, on folds 1 and 2: +0.029 / +0.036 on clean text and
-  +0.021 / +0.041 on noisy text
+- fine-tuning the full encoder vs keeping it frozen, on folds 1 and 2 (both trained on the original rows
+  only, no augmentation): +0.029 / +0.036 on clean text and +0.021 / +0.041 on noisy text
 - our earlier frozen-encoder model had OOF macro F1 of 0.8678 / 0.8670 on folds 1 and 2 and scored 0.83431
   on the public leaderboard. The fine-tuned model scored 0.83344 public but 0.84934 private, so it held
   up better on the unseen part of the test set
