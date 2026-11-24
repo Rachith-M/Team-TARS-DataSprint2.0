@@ -36,7 +36,7 @@ Training settings (see `code/sprint/a2_recipe.py` and `code/sprint/depth_ladder.
 - trained on an AMD RX 9060 XT with ROCm, roughly 30 minutes
 
 The extra rows are only used for training: augmented copies of about 65% of the rows at weight 0.7
-(romanized versions, Hinglish with some English words and fillers swapped in, ASR-style dropped
+(romanized versions, Hinglish with a few English words swapped in and fillers added, ASR-style dropped
 characters), and phrase views plus "opposite" pairs like lights on vs lights off at weight 0.55. We make
 sure none of them match any validation text, otherwise the CV numbers would be inflated.
 
@@ -61,8 +61,8 @@ The biggest thing we noticed in the data is that the test set is about 64% roman
 only 33%. So most of the work went into making the different scripts look the same to the model:
 
 - unicode NFKC, lowercase, remove zero-width joiners and punctuation
-- transliterate Devanagari to Roman and drop the implicit "a" sounds, then fold common spelling
-  variations (aa/a, ee/i, w/v, doubled letters)
+- for the TF-IDF features, transliterate Devanagari to Roman and drop the implicit "a" sounds, then fold
+  common spelling variations (aa/a, ee/i, w/v, doubled letters)
 - convert numbers and drop fillers at the start or end of the query (bhai, yaar, please, na) for the
   second view, e.g. "10 baje" becomes "das baje"
 - the dictionary view mentioned above, e.g.
@@ -102,8 +102,8 @@ It's grouped on the phonetic form of each query, so different spellings of the s
 on both sides. Inside each fold there is a smaller early-stopping split to pick the number of epochs,
 then we retrain on the full training part of the fold and score the held-out part.
 
-Since the test data is noisier than train, we score three versions of the held-out rows: the original
-text, a noisy Hinglish rewrite, and an ASR-style version with dropped characters.
+To check how the model copes with messy input, we score three versions of the held-out rows: the
+original text, a noisy Hinglish rewrite, and an ASR-style version with dropped characters.
 
 Fold 2 (3,387 held-out organizer rows):
 
@@ -120,12 +120,12 @@ Other numbers that shaped our decisions:
 - fine-tuning the full encoder vs keeping it frozen, on folds 1 and 2 (both trained on the original rows
   only, no augmentation): +0.029 / +0.036 on clean text and +0.021 / +0.041 on noisy text
 - our earlier frozen-encoder model had OOF macro F1 of 0.8678 / 0.8670 on folds 1 and 2 and scored 0.83431
-  on the public leaderboard. The fine-tuned model scored 0.83344 public but 0.84934 private, so it held
-  up better on the unseen part of the test set
+  on the public leaderboard. The fine-tuned model, which is our scored entry, got 0.83344 public and
+  0.84934 private
 - median per-class F1 on fold 2 is 0.874, with 25 of 56 classes at 0.90 or above. The weak ones are
   cooking technique (0.58), general assistant request (0.69), raise volume (0.71) and greeting (0.73).
-  Most mistakes are between related intents (create vs check calendar, looking up info vs general
-  requests, cooking technique vs recipes)
+  The biggest confusions are between related intents (create vs check calendar, looking up info vs
+  general requests, cooking technique vs recipes)
 
 We only ran the full pilot on folds 1 and 2. Fold 1's final refit was cut short by the deadline, so the
 table above is fold 2.
@@ -133,8 +133,9 @@ table above is fold 2.
 
 ## Reproducing submission.csv
 
-You need Python 3.12 and a GPU with at least 8 GB of memory. NVIDIA (CUDA) and AMD (ROCm) both work
-since the code goes through `torch.cuda`.
+You need Python 3.12 and a GPU with at least 8 GB of memory. We trained the final model on an AMD card
+with ROCm. The code only uses `torch.cuda`, so an NVIDIA GPU with CUDA should work too, though we
+haven't rerun this exact recipe on one.
 
 1. Install a GPU build of PyTorch, then the rest:
 
@@ -163,13 +164,13 @@ since the code goes through `torch.cuda`.
    This writes `runs/final/final/submission.csv` and saves the weights to `runs/final/final/checkpoint/`.
    On Windows, `powershell -ExecutionPolicy Bypass -File run_pc.ps1` does steps 1, 3 and 4 in one go.
 
-5. Check the parameter count with `python code/param_count.py runs/final/final/checkpoint`.
+5. Check the parameter count from the repo root with `python code/param_count.py runs/final/final/checkpoint`.
 
 If you want to see the CV numbers first, run step 4 with `--folds 2 --epochs 12 --output ../runs/fold2`
 instead of the `--final-epochs/--epochs 8/--test` options.
 
-Note: seeds are fixed, but GPU kernels aren't fully deterministic (ROCm especially), so a rerun can
-differ from our CSV on a handful of rows.
+Note: seeds are fixed, but GPU kernels aren't fully deterministic (ROCm especially), so a rerun may
+not match our CSV exactly.
 
 
 ## Notes on the rules
