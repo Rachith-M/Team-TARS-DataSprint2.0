@@ -1,0 +1,104 @@
+{
+  "checkpoint_revision": "64b330ff6703ffebdfc55c412a6a8aaf1b2728c8",
+  "seed": 2046,
+  "pilot_folds": [
+    1,
+    2
+  ],
+  "template_evaluated": false,
+  "head_lr": 0.001,
+  "patience": 2,
+  "encoder_lr": {
+    "A0": 0.0,
+    "A1": 3e-05,
+    "A2": 2e-05
+  },
+  "weight_decay": 0.01,
+  "layer_decay": 0.9,
+  "warmup_fraction": 0.1,
+  "batch": 32,
+  "max_epochs": 8,
+  "divergence_retry_encoder_lr_factor": 0.5,
+  "folds": {
+    "fold1": {
+      "outer": {
+        "fit_rows": 13548,
+        "validation_rows": 3388,
+        "phonetic_twins": 0,
+        "phonetic_twin_rate": 0.0,
+        "twin_rate_le_1_5_pct": true
+      },
+      "early_stop": {
+        "fit_rows": 10838,
+        "validation_rows": 2710,
+        "phonetic_twins": 0,
+        "phonetic_twin_rate": 0.0,
+        "twin_rate_le_1_5_pct": true
+      }
+    },
+    "fold2": {
+      "outer": {
+        "fit_rows": 13549,
+        "validation_rows": 3387,
+        "phonetic_twins": 0,
+        "phonetic_twin_rate": 0.0,
+        "twin_rate_le_1_5_pct": true
+      },
+      "early_stop": {
+        "fit_rows": 10839,
+        "validation_rows": 2710,
+        "phonetic_twins": 0,
+        "phonetic_twin_rate": 0.0,
+        "twin_rate_le_1_5_pct": true
+      }
+    },
+    "fold3": {
+      "outer": {
+        "fit_rows": 13549,
+        "validation_rows": 3387,
+        "phonetic_twins": 0,
+        "phonetic_twin_rate": 0.0,
+        "twin_rate_le_1_5_pct": true
+      },
+      "early_stop": {
+        "fit_rows": 10839,
+        "validation_rows": 2710,
+        "phonetic_twins": 0,
+        "phonetic_twin_rate": 0.0,
+        "twin_rate_le_1_5_pct": true
+      }
+    },
+    "fold4": {
+      "outer": {
+        "fit_rows": 13549,
+        "validation_rows": 3387,
+        "phonetic_twins": 0,
+        "phonetic_twin_rate": 0.0,
+        "twin_rate_le_1_5_pct": true
+      },
+      "early_stop": {
+        "fit_rows": 10839,
+        "validation_rows": 2710,
+        "phonetic_twins": 0,
+        "phonetic_twin_rate": 0.0,
+        "twin_rate_le_1_5_pct": true
+      }
+    },
+    "fold5": {
+      "outer": {
+        "fit_rows": 13549,
+        "validation_rows": 3387,
+        "phonetic_twins": 0,
+        "phonetic_twin_rate": 0.0,
+        "twin_rate_le_1_5_pct": true
+      },
+      "early_stop": {
+        "fit_rows": 10839,
+        "validation_rows": 2710,
+        "phonetic_twins": 0,
+        "phonetic_twin_rate": 0.0,
+        "twin_rate_le_1_5_pct": true
+      }
+    }
+  }
+}

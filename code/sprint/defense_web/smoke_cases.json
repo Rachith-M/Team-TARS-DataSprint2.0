@@ -1,0 +1,68 @@
+[
+  {
+    "name": "Devanagari",
+    "text": "इस वर्ष मार्च का चौथा सोमवार कौन सी तारीख है",
+    "intent_id": 0,
+    "action": "accept"
+  },
+  {
+    "name": "Devanagari",
+    "text": "क्या कोई यातायात है",
+    "intent_id": 11,
+    "action": "accept"
+  },
+  {
+    "name": "Hinglish with fillers",
+    "text": "bhai chalo ek taiksee buk karte hain na",
+    "intent_id": 51,
+    "action": "accept"
+  },
+  {
+    "name": "Mixed script",
+    "text": "pharneechar ko ilektroniks ki सूची se riples kar do",
+    "intent_id": 21,
+    "action": "accept"
+  },
+  {
+    "name": "Contextual digits",
+    "text": "kal subah 10 baje meri mulaakaat ki yaad dila do",
+    "intent_id": 48,
+    "action": "accept"
+  },
+  {
+    "name": "English",
+    "text": "wall socket switch on please",
+    "intent_id": 23,
+    "action": "accept"
+  },
+  {
+    "name": "ASR spelling",
+    "text": "mjhe rasoeeghar ki battiyaan band karnee h",
+    "intent_id": 39,
+    "action": "accept"
+  },
+  {
+    "name": "Trained fallback topic",
+    "text": "kya aap mjhe ek kap kophee dila sakte hain",
+    "intent_id": 55,
+    "action": "reject"
+  },
+  {
+    "name": "Human-authored unsupported",
+    "text": "run the interactive demo and open it for me",
+    "intent_id": 55,
+    "action": "reject"
+  },
+  {
+    "name": "Human-authored unsupported",
+    "text": "The laptop can handle at least a billion parameter easily",
+    "intent_id": 55,
+    "action": "reject"
+  },
+  {
+    "name": "Rephrase prompt",
+    "text": "क्या आप इस सप्ताह के शीर्ष दस एकल की सूची बना सकते हैं",
+    "intent_id": 55,
+    "action": "clarify"
+  }
+]

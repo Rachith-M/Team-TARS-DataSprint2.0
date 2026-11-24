@@ -1,0 +1,10 @@
+# Competition data and trained weights are not redistributed (see README).
+code/train.csv
+code/test.csv
+code/sample_submission.csv
+runs/
+*.safetensors
+*.onnx
+*.pt
+__pycache__/
+*.pyc

@@ -1,0 +1,15 @@
+[
+  "Date or local time", "Set light color", "Book a train ticket", "Check delivery or takeaway",
+  "Stock information", "Greeting", "Find local events", "Dislike current music",
+  "Turn smart plug off", "Find a recipe", "Currency exchange", "Check traffic",
+  "General assistant request", "Weather", "Raise volume", "Add a contact", "Order food",
+  "Look up a contact", "Brighten lights", "Find nearby businesses", "Play an audiobook",
+  "Add to a list", "Get news", "Turn smart plug on", "Tell a joke", "Define a word",
+  "Read social updates", "Playback mode or control", "Audio settings", "Delete a calendar event",
+  "Dim lights", "Check calendar", "Send an email", "Start robot vacuum", "Lower volume", "Play radio",
+  "Cooking technique", "Time zone conversion", "Calculation", "Turn lights off", "Turn lights on",
+  "Travel schedule or directions", "Like current music", "Check email", "Play music", "Mute audio",
+  "Post to social media", "Look up information", "Create an event or reminder", "Delete an alarm",
+  "Remove from a list", "Book a cab", "Movie information", "Identify or find music", "Read lists",
+  "Fallback"
+]

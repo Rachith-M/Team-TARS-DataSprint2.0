@@ -1,0 +1,7 @@
+{
+  "muril": {"repo": "google/muril-base-cased", "revision": "afd9f36c7923d54e97903922ff1b260d091d202f", "lr": 0.000025},
+  "e5_base_ft": {"repo": "intfloat/multilingual-e5-base", "revision": "d128750597153bb5987e10b1c3493a34e5a4502a", "lr": 0.00002, "prefix": "query: "},
+  "indicbert_v2": {"repo": "ai4bharat/IndicBERTv2-MLM-only", "revision": "8598f13fe52443bc3fc054fcd665944560145b5c", "lr": 0.000025},
+  "xlm_r": {"repo": "FacebookAI/xlm-roberta-base", "revision": "e73636d4f797dec63c3081bb6ed5c7b0bb3f2089", "lr": 0.00002},
+  "mdeberta_v3": {"repo": "microsoft/mdeberta-v3-base", "revision": "a0484667b22365f84929a935b5e50a51f71f159d", "lr": 0.00002}
+}

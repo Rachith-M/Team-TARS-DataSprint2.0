@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Anveshan Intent Engine</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#query">Skip to the query box</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark" lang="hi" aria-hidden="true">अ</span>
+      <div class="brand-text">
+        <strong>Anveshan</strong>
+        <span>Hindi · Hinglish intent engine</span>
+      </div>
+    </div>
+    <nav class="top-actions" aria-label="Runtime">
+      <div class="status" id="runtime-status" data-status="loading">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="runtime-label" role="status">Connecting to local model</span>
+        <button type="button" id="reconnect" class="ghost small" hidden>Retry</button>
+      </div>
+      <button type="button" class="icon-button" id="theme" aria-label="Switch colour theme" title="Switch colour theme">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="title">
+      <div class="hero-copy">
+        <p class="eyebrow">Stage 2 · Live defense · runs fully offline on CPU</p>
+        <h1 id="title">Ask in <span lang="hi">हिंदी</span>, Hinglish, or both.</h1>
+        <p class="lede">One Bhasha model routes your request to one of 55 assistant intents, or declines it safely as Class 55. Every number on this page comes from the model running on this machine.</p>
+      </div>
+      <dl class="hero-stats" aria-label="Model at a glance">
+        <div><dt>Parameters</dt><dd id="stat-params">—</dd></div>
+        <div><dt>Latency budget</dt><dd>&lt; 50 ms</dd></div>
+        <div><dt>Intents</dt><dd>55 + fallback</dd></div>
+      </dl>
+    </section>
+
+    <section class="composer card" aria-labelledby="query-label">
+      <form id="query-form">
+        <div class="composer-head">
+          <label id="query-label" for="query">Your request</label>
+          <div class="script-meter" aria-live="polite">
+            <span class="script-chip" id="script-chip" data-script="empty">Waiting for text</span>
+            <span class="script-bar" aria-hidden="true"><i id="bar-deva"></i><i id="bar-roman"></i></span>
+          </div>
+        </div>
+        <textarea id="query" rows="3" maxlength="512" dir="auto" required autocomplete="off" spellcheck="false"
+          aria-describedby="query-help" placeholder="kal subah 10 baje meri meeting ki yaad dila do"></textarea>
+        <div class="composer-foot">
+          <p class="help" id="query-help"><span id="query-length">0 / 512</span><span class="dot" aria-hidden="true">·</span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run</p>
+          <div class="actions">
+            <button class="ghost" type="button" id="clear" disabled>Clear</button>
+            <button class="primary" type="submit" id="run" disabled>
+              <span>Route request</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </form>
+      <div class="examples">
+        <div class="tabs" role="tablist" aria-label="Example sets">
+          <button type="button" role="tab" aria-selected="true" data-set="scripts">Scripts</button>
+          <button type="button" role="tab" aria-selected="false" data-set="noisy">Noisy input</button>
+          <button type="button" role="tab" aria-selected="false" data-set="fallback">Fallback</button>
+        </div>
+        <div class="chips" id="chips" role="tabpanel"></div>
+      </div>
+    </section>
+
+    <section class="result-grid" aria-label="Result">
+      <article class="card decision" id="decision" data-state="idle" aria-live="polite" aria-labelledby="decision-title">
+        <div class="decision-top">
+          <span class="badge" id="badge">Ready</span>
+          <span class="domain" id="domain"></span>
+        </div>
+        <div class="verdict">
+          <span class="intent-id" id="intent-id" aria-label="Intent ID">—</span>
+          <div>
+            <h2 id="decision-title">Waiting for a request</h2>
+            <p id="decision-note">Type a request or pick an example. The decision, its confidence and the reasoning steps appear here.</p>
+          </div>
+        </div>
+        <div class="gauge" aria-labelledby="gauge-label">
+          <div class="gauge-head">
+            <span id="gauge-label">Model confidence</span>
+            <strong id="confidence">—</strong>
+          </div>
+          <div class="gauge-track" id="gauge-track">
+            <span class="zone reject" id="zone-reject"></span>
+            <span class="zone clarify" id="zone-clarify"></span>
+            <span class="zone accept" id="zone-accept"></span>
+            <span class="needle" id="needle" hidden></span>
+          </div>
+          <div class="gauge-legend" aria-hidden="true">
+            <span><i class="reject"></i>Decline</span><span><i class="clarify"></i>Ask to rephrase</span><span><i class="accept"></i>Route</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card latency" aria-labelledby="latency-title">
+        <h3 id="latency-title">CPU latency <span class="h-note">· this session</span></h3>
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="50"/>
+            <circle class="ring-fg" id="ring" cx="60" cy="60" r="50"/>
+          </svg>
+          <div class="ring-text"><strong id="latency">—</strong><span>ms of 50</span></div>
+        </div>
+        <dl class="mini-stats">
+          <div><dt>p50</dt><dd id="p50">—</dd></div>
+          <div><dt>p95</dt><dd id="p95">—</dd></div>
+          <div><dt>Requests</dt><dd id="count">0</dd></div>
+        </dl>
+        <svg class="spark" id="spark" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </article>
+    </section>
+
+    <section class="card pipeline" aria-labelledby="pipeline-title">
+      <div class="section-head">
+        <h3 id="pipeline-title">How it decided</h3>
+        <p>The exact steps the server ran for your last request.</p>
+      </div>
+      <ol class="steps" id="steps">
+        <li data-step="input"><span class="step-n">1</span><div><strong>Input</strong><p class="step-text" id="s-input">—</p><small id="s-input-meta">Script detection</small></div></li>
+        <li data-step="normalize"><span class="step-n">2</span><div><strong>Normalize</strong><p class="step-text" id="s-normalized">—</p><small>Digits, fillers and spelling variants unified</small></div></li>
+        <li data-step="dictionary"><span class="step-n">3</span><div><strong>Dictionary view</strong><p class="step-text" id="s-dictionary">—</p><small id="s-dictionary-meta">Cross-script lexicon from training rows</small></div></li>
+        <li data-step="model"><span class="step-n">4</span><div><strong>Bhasha · ONNX</strong><p class="step-text" id="s-model">—</p><small id="s-model-meta">Encoder + lexical head on CPU</small></div></li>
+        <li data-step="policy"><span class="step-n">5</span><div><strong>Fallback policy</strong><p class="step-text" id="s-policy">—</p><small>Calibrated on organizer-labeled rows</small></div></li>
+      </ol>
+    </section>
+
+    <section class="lower-grid">
+      <article class="card alternatives" aria-labelledby="alt-title">
+        <div class="section-head">
+          <h3 id="alt-title">Top candidates</h3>
+          <p>Probabilities after calibration.</p>
+        </div>
+        <ol class="bars" id="bars"><li class="empty">Run a request to see the ranking.</li></ol>
+      </article>
+
+      <article class="card intent-map" aria-labelledby="map-title">
+        <div class="section-head">
+          <h3 id="map-title">Intent map</h3>
+          <p>All 56 classes by domain. Shade shows probability; the outline marks the decision.</p>
+        </div>
+        <div class="domains" id="domains"></div>
+      </article>
+    </section>
+
+    <section class="lower-grid">
+      <article class="card checklist" aria-labelledby="check-title">
+        <div class="section-head row">
+          <div>
+            <h3 id="check-title">Judge checklist</h3>
+            <p>Saved cases across scripts, noise and fallback. Runs live against this model.</p>
+          </div>
+          <button type="button" class="secondary" id="run-checks" disabled>Run all checks</button>
+        </div>
+        <div class="check-summary" id="check-summary" hidden>
+          <strong id="check-score">—</strong><span id="check-detail"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">Case</th><th scope="col">Request</th><th scope="col">Expected</th><th scope="col">Result</th><th scope="col" class="num">ms</th></tr></thead>
+            <tbody id="check-rows"><tr><td colspan="5" class="empty">Press “Run all checks”.</td></tr></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card history" aria-labelledby="history-title">
+        <div class="section-head">
+          <h3 id="history-title">This session</h3>
+          <p>Select a row to run it again.</p>
+        </div>
+        <ol class="history-list" id="history"><li class="empty">No requests yet.</li></ol>
+      </article>
+    </section>
+
+    <section class="proof card" aria-labelledby="proof-title">
+      <h3 id="proof-title" class="sr-only">Model verification</h3>
+      <div class="proof-item">
+        <span>Parameter budget</span>
+        <strong id="param-value">—</strong>
+        <div class="budget" aria-hidden="true"><i id="param-bar"></i></div>
+        <small id="param-note">Competition cap 300M</small>
+      </div>
+      <div class="proof-item">
+        <span>Submission parity</span>
+        <strong id="parity">—</strong>
+        <small>Leaderboard rows reproduced from this model</small>
+      </div>
+      <div class="proof-item">
+        <span>Release</span>
+        <strong id="release">—</strong>
+        <small id="runtime-detail">Local CPU</small>
+      </div>
+      <details class="hashes">
+        <summary>Fingerprints</summary>
+        <dl>
+          <div><dt>Submitted CSV SHA-256</dt><dd><code id="submission-hash">—</code></dd></div>
+          <div><dt>ONNX SHA-256</dt><dd><code id="model-hash">—</code></dd></div>
+          <div><dt>Fallback policy SHA-256</dt><dd><code id="policy-hash">—</code></dd></div>
+        </dl>
+      </details>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Runs on localhost. Requests are processed in memory and never leave this machine.</p>
+  </footer>
+</body>
+</html>

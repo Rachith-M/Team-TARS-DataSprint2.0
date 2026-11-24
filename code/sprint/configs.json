@@ -1,0 +1,10 @@
+{
+  "char": {"lexical": "char", "encoder": null, "augment": 0, "oos": 0, "c": 0.5, "balance": 1.0},
+  "lex": {"lexical": "cross-script", "encoder": null, "augment": 0, "oos": 0, "c": 0.8, "balance": 0.4},
+  "lex_aug": {"lexical": "cross-script", "encoder": null, "augment": 0.65, "oos": 0, "c": 0.8, "balance": 0.4},
+  "lex_oos": {"lexical": "cross-script", "encoder": null, "augment": 0.65, "oos": 420, "c": 0.8, "balance": 0.4},
+  "e5_small": {"lexical": null, "encoder": "e5-small", "augment": 0.7, "oos": 0, "c": 5.0, "balance": 0.35},
+  "e5_base": {"lexical": null, "encoder": "e5-base", "head": "ridge", "augment": 0.7, "oos": 0, "c": 0.65, "balance": 0.35},
+  "hybrid_small": {"lexical": "cross-script", "encoder": "e5-small", "embedding_weight": 1.4, "augment": 0.65, "oos": 0, "c": 0.65, "balance": 0.38},
+  "hybrid_base": {"lexical": "cross-script", "encoder": "e5-base", "embedding_weight": 1.4, "augment": 0.65, "oos": 0, "c": 0.65, "balance": 0.38}
+}
