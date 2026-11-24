@@ -3,7 +3,7 @@
 Our solution for the Hindi/Hinglish intent classification task: 55 intents plus class 55 for
 out-of-scope requests, scored on macro F1 over all 56 classes.
 
-Kaggle team name: `rachith_33`
+Kaggle team name: Team TARS
 
 Final submission is `submission.csv` in this repo (public 0.83344, private 0.84934).
 SHA-256 of the file: `92fc3b6f737e462b5aee3bbe55e42f81e2ec3c8161e2025ee2100059cd46d85b`
