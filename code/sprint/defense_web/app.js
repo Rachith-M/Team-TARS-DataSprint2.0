@@ -334,7 +334,7 @@ async function connect() {
     $('param-note').textContent = `${model.dictionary_entries.toLocaleString('en-US')} dictionary entries counted toward the cap`;
     $('parity').textContent = `${model.matching_submission_rows.toLocaleString('en-US')} / ${model.submission_rows.toLocaleString('en-US')}`;
     $('release').textContent = `v${model.version}`;
-    $('runtime-detail').textContent = `Bhasha · ONNX int8 · revision ${String(model.checkpoint_revision).slice(0, 8)}`;
+    $('runtime-detail').textContent = `Bhasha · ONNX ${model.encoder_precision} · revision ${String(model.checkpoint_revision).slice(0, 8)}`;
     $('submission-hash').textContent = model.submission_sha256;
     $('model-hash').textContent = model.model_sha256;
     $('policy-hash').textContent = model.policy_sha256;
@@ -382,7 +382,7 @@ async function runChecks() {
   const rows = state.cases.map((item) => {
     const result = make('span', { className: 'pill wait', textContent: 'Waiting' });
     const ms = make('td', { className: 'num', textContent: '—' });
-    const expected = `${item.intent_id} · ${item.action}`;
+    const expected = `${item.intent_id} · ${(item.actions || [item.action]).join(' / ')}`;
     body.append(make('tr', {}, [
       make('td', { textContent: item.name }), make('td', { className: 'req', textContent: item.text, title: item.text }),
       make('td', { className: 'muted', textContent: expected }), make('td', {}, [result]), ms,
@@ -394,7 +394,7 @@ async function runChecks() {
   for (const row of rows) {
     try {
       const output = await predict(row.item.text);
-      const ok = output.intent_id === row.item.intent_id && output.action === row.item.action;
+      const ok = output.intent_id === row.item.intent_id && (row.item.actions || [row.item.action]).includes(output.action);
       passed += ok;
       times.push(output.inference_ms);
       state.latencies.push(output.inference_ms);

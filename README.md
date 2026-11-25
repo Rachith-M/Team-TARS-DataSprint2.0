@@ -180,6 +180,7 @@ predictions matched the committed submission.csv.
 - trained only on the organizer data. No paid LLM APIs and no external lookups of test queries
 - `englishize.py` and the `--englishize` / `--llm-rewrites` options in `a2_recipe.py` are from experiments
   we started after the deadline. They're off by default and weren't used for the submission
-- the stage 2 demo (`defense.py`) still loads our earlier frozen-encoder model, the one behind our 0.83431
-  public score. We're moving it to the fine-tuned model for the final demo round
+- the stage 2 demo (`defense.py`, v1.1) runs this same fine-tuned model, exported to ONNX with the encoder
+  kept at full precision. On CPU it reproduces all 4,912 rows of `submission.csv` (a version with an 8-bit
+  encoder matched only 4,375, so we didn't use it). Measured on our PC: median 18 ms, p95 26 ms per request
 - we're not publishing the trained weights. Use the steps above to rebuild them

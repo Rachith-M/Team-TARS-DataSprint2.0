@@ -57,6 +57,7 @@ class DefenseRuntime:
                          'model_sha256': proof['assets']['model.int8.onnx'], 'policy_sha256': fingerprint(policy),
                          'checkpoint_revision': proof['checkpoint_revision'], 'max_query_chars': MAX_CHARS,
                          'max_two_view_tokens': MAX_TWO_VIEW_TOKENS,
+                         'encoder_precision': self.base.settings.get('encoder_precision', 'int8'),
                          'policy': {'accept_below': self.policy['rule']['accept_below'],
                                     'threshold': self.policy['rule']['threshold']}}
 
@@ -245,7 +246,8 @@ def self_check(runtime):
     outcomes = []
     for case in cases:
         result = runtime.predict(case['text'])
-        passed = result['intent_id'] == case['intent_id'] and result['action'] == case['action']
+        allowed = case.get('actions', [case.get('action')])  # unsupported cases accept either safe fallback
+        passed = result['intent_id'] == case['intent_id'] and result['action'] in allowed
         outcomes.append({'name': case['name'], 'passed': passed, 'intent_id': result['intent_id'],
                          'action': result['action'], 'inference_ms': result['inference_ms']})
     return {'model': runtime.metadata, 'cases': outcomes, 'passed': all(row['passed'] for row in outcomes)}

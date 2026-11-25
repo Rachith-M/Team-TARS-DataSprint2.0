@@ -5,9 +5,10 @@ import json
 from pathlib import Path
 
 
-VERSION = '1.0.0'
-SUBMITTED_SHA256 = 'b57e79a709482c1db53e818570a1942f88a5e5c8288dbfdb003d5a3eb9d2fd21'
-ASSETS = ('model.int8.onnx', 'features.joblib', 'tokenizer.json', 'runtime.json', 'dictionary.json')
+VERSION = '1.1.0'
+# v1.1 serves the fine-tuned model behind the scored Kaggle entry (submission.csv in the repo).
+SUBMITTED_SHA256 = '92fc3b6f737e462b5aee3bbe55e42f81e2ec3c8161e2025ee2100059cd46d85b'
+ASSETS = ('model.int8.onnx', 'model.weights', 'features.joblib', 'tokenizer.json', 'runtime.json', 'dictionary.json')
 POLICY = Path('sprint_results/bhasha_defense/policy.json')
 MAX_TWO_VIEW_TOKENS = 40
 

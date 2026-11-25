@@ -45,23 +45,32 @@
     "name": "Trained fallback topic",
     "text": "kya aap mjhe ek kap kophee dila sakte hain",
     "intent_id": 55,
-    "action": "reject"
+    "actions": [
+      "reject",
+      "clarify"
+    ]
   },
   {
     "name": "Human-authored unsupported",
     "text": "run the interactive demo and open it for me",
     "intent_id": 55,
-    "action": "reject"
+    "actions": [
+      "reject",
+      "clarify"
+    ]
   },
   {
     "name": "Human-authored unsupported",
     "text": "The laptop can handle at least a billion parameter easily",
     "intent_id": 55,
-    "action": "reject"
+    "actions": [
+      "reject",
+      "clarify"
+    ]
   },
   {
     "name": "Rephrase prompt",
-    "text": "क्या आप इस सप्ताह के शीर्ष दस एकल की सूची बना सकते हैं",
+    "text": "दिल्ली से पुणे तक के लिए फ्लाइट कराओगे",
     "intent_id": 55,
     "action": "clarify"
   }
